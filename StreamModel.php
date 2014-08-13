@@ -199,6 +199,13 @@ class StreamModel {
 		return false;
 	}
 	
+	public function count()
+	{
+		$query = $this->getAll();
+		
+		return $query['total'];
+	}
+	
 	/*
 	| -------------------------------------------------------------------
 	| QUERY BUILDERS
@@ -220,12 +227,26 @@ class StreamModel {
 		if (func_num_args() == 2)
 		{
 			$value = $operator;
-			$this->where = "`$field` = '{$value}'";
+			$this->wheres[] = "`$field` = '{$value}'";
 			
 			return $this;
 		}
 		
-		$this->where = "`$field` $operator '{$value}'";
+		$this->wheres[] = "`$field` $operator '{$value}'";
+		
+		return $this;
+	}
+	
+	public function whereNull($field)
+	{
+		$this->wheres[] = "`$field` IS NULL";
+		
+		return $this;
+	}
+	
+	public function whereNotNull($field)
+	{
+		$this->wheres[] = "`$field` IS NOT NULL";
 		
 		return $this;
 	}
@@ -351,6 +372,8 @@ class StreamModel {
 	
 	private function getParams()
 	{
+		$this->where = implode(' AND ', $this->wheres);
+		
 		$entries_params = $this->ci->streams->entries->entries_params;
 		
 		foreach($entries_params as $param => $default)
@@ -359,6 +382,9 @@ class StreamModel {
 			
 			else $params[$param] = $default;
 		}
+		
+		// Clear wheres
+		$this->wheres = array();
 		
 		return $params;
 	}
