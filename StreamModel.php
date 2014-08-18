@@ -1,6 +1,6 @@
 <?php if (!defined('BASEPATH')) exit('No direct script access allowed');
 
-// v1.0.0
+// v1.0.1
 
 class StreamModel {
 	
@@ -87,6 +87,13 @@ class StreamModel {
 	 * @var str
 	 */
 	protected $where;
+	
+	/**
+	 * Where string
+	 *
+	 * @var array
+	 */
+	protected $wheres = array();
 	
 	/**
 	 * Exclude values based on exclude_by field
