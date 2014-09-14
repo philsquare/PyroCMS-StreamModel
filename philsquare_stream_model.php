@@ -1,8 +1,14 @@
 <?php if (!defined('BASEPATH')) exit('No direct script access allowed');
 
-// v1.0.0
 
-class StreamModel {
+/**
+ * Class Philsquare_stream_model
+ *
+ * @version 1.0.3
+ * @author Philsquare, LLC
+ * @package PyroCMS
+ */
+class Philsquare_stream_model {
 	
 	/**
 	 * Stream Name
@@ -80,13 +86,20 @@ class StreamModel {
 	 * @var bool
 	 */
 	protected $restrict_user;
+
+    /**
+     * Where string
+     *
+     * @var str
+     */
+    protected $where;
 	
 	/**
 	 * Where string
 	 *
-	 * @var str
+	 * @var array
 	 */
-	protected $where;
+	protected $wheres = array();
 	
 	/**
 	 * Exclude values based on exclude_by field
@@ -166,12 +179,12 @@ class StreamModel {
 	 * @var int
 	 */
 	protected $cache_expires;
-	
-	public function __construct()
-	{
-		$this->ci =& get_instance();
-	}
-	
+
+    public function __construct()
+    {
+        $this->ci =& get_instance();
+    }
+
 	/*
 	| -------------------------------------------------------------------
 	| RETRIEVE
@@ -183,9 +196,11 @@ class StreamModel {
 		return $this->ci->streams->entries->get_entry($id, $this->stream, $this->namespace, false);
 	}
 	
-	public function getAll()
+	public function getAll($key = null)
 	{
-		return $this->ci->streams->entries->get_entries($this->getParams());
+		$results = $this->ci->streams->entries->get_entries($this->getParams());
+
+        return $key ? $results[$key] : $results;
 	}
 	
 	public function first()
@@ -198,6 +213,30 @@ class StreamModel {
 		
 		return false;
 	}
+	
+    public function count()
+    {
+        $query = $this->getAll();
+
+        return $query['total'];
+    }
+
+
+    public function ids($relationalId = null)
+    {
+        $query = $this->getAll();
+
+        $ids = array();
+
+        foreach($query['entries'] as $row)
+        {
+            if($relationalId) $ids[] = $row[$relationalId]['id'];
+
+            else $ids[] = $row['id'];
+        }
+
+        return $ids;
+    }
 	
 	/*
 	| -------------------------------------------------------------------
@@ -220,12 +259,26 @@ class StreamModel {
 		if (func_num_args() == 2)
 		{
 			$value = $operator;
-			$this->where = "`$field` = '{$value}'";
+			$this->wheres[] = "`$field` = '{$value}'";
 			
 			return $this;
 		}
 		
-		$this->where = "`$field` $operator '{$value}'";
+		$this->wheres[] = "`$field` $operator '{$value}'";
+		
+		return $this;
+	}
+	
+	public function whereNull($field)
+	{
+		$this->wheres[] = "`$field` IS NULL";
+		
+		return $this;
+	}
+	
+	public function whereNotNull($field)
+	{
+		$this->wheres[] = "`$field` IS NOT NULL";
 		
 		return $this;
 	}
@@ -257,6 +310,14 @@ class StreamModel {
 		return $this;
 	}
 	
+	public function whereActiveDate($start, $end)
+	    {
+	        $this->wheres[] = "`{$start}` < NOW()";
+	        $this->wheres[] = "`{$end}` > NOW()";
+        
+	        return $this;
+	    }
+	
 	public function restrict()
 	{
 		$this->restrict_user = true;
@@ -268,15 +329,18 @@ class StreamModel {
 	{
 		if (func_num_args() == 1)
 		{
-			$field = 'id';
 			$values = $field;
+			$field = 'id';
 		}
-		
+
 		$values = implode('|', $values);
-		
-		$this->include = $values;
+
+		// If the values are blank or zero it will not
+		// restrict. Instead, it returns all. So this is
+		// the fix
+		$this->include = ($values != '') ? $values : 'X';
 		$this->include_by = $field;
-		
+
 		return $this;
 	}
 	
@@ -284,8 +348,8 @@ class StreamModel {
 	{
 		if (func_num_args() == 1)
 		{
-			$field = 'id';
-			$values = $field;
+            $values = $field;
+            $field = 'id';
 		}
 		
 		$values = implode('|', $values);
@@ -334,6 +398,17 @@ class StreamModel {
 	
 	/*
 	| -------------------------------------------------------------------
+	| UPDATE
+	| -------------------------------------------------------------------
+	*/
+	
+	public function update($id, $data)
+	{
+		return $this->ci->streams->entries->update_entry($id, $data, $this->stream, $this->namespace);
+	}
+	
+	/*
+	| -------------------------------------------------------------------
 	| DESTROY
 	| -------------------------------------------------------------------
 	*/
@@ -351,6 +426,8 @@ class StreamModel {
 	
 	private function getParams()
 	{
+		$this->where = implode(' AND ', $this->wheres);
+		
 		$entries_params = $this->ci->streams->entries->entries_params;
 		
 		foreach($entries_params as $param => $default)
@@ -359,6 +436,9 @@ class StreamModel {
 			
 			else $params[$param] = $default;
 		}
+		
+		// Clear wheres
+		$this->wheres = array();
 		
 		return $params;
 	}
