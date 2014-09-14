@@ -1,8 +1,8 @@
 <?php if (!defined('BASEPATH')) exit('No direct script access allowed');
 
-// v1.0.1
+// v1.0.3
 
-class StreamModel {
+class Philsquare_stream_model {
 	
 	/**
 	 * Stream Name
@@ -80,13 +80,13 @@ class StreamModel {
 	 * @var bool
 	 */
 	protected $restrict_user;
-	
-	/**
-	 * Where string
-	 *
-	 * @var str
-	 */
-	protected $where;
+
+    /**
+     * Where string
+     *
+     * @var str
+     */
+    protected $where;
 	
 	/**
 	 * Where string
@@ -173,12 +173,12 @@ class StreamModel {
 	 * @var int
 	 */
 	protected $cache_expires;
-	
-	public function __construct()
-	{
-		$this->ci =& get_instance();
-	}
-	
+
+    public function __construct()
+    {
+        $this->ci =& get_instance();
+    }
+
 	/*
 	| -------------------------------------------------------------------
 	| RETRIEVE
@@ -190,9 +190,11 @@ class StreamModel {
 		return $this->ci->streams->entries->get_entry($id, $this->stream, $this->namespace, false);
 	}
 	
-	public function getAll()
+	public function getAll($key = null)
 	{
-		return $this->ci->streams->entries->get_entries($this->getParams());
+		$results = $this->ci->streams->entries->get_entries($this->getParams());
+
+        return $key ? $results[$key] : $results;
 	}
 	
 	public function first()
@@ -206,12 +208,29 @@ class StreamModel {
 		return false;
 	}
 	
-	public function count()
-	{
-		$query = $this->getAll();
-		
-		return $query['total'];
-	}
+    public function count()
+    {
+        $query = $this->getAll();
+
+        return $query['total'];
+    }
+
+
+    public function ids($relationalId = null)
+    {
+        $query = $this->getAll();
+
+        $ids = array();
+
+        foreach($query['entries'] as $row)
+        {
+            if($relationalId) $ids[] = $row[$relationalId]['id'];
+
+            else $ids[] = $row['id'];
+        }
+
+        return $ids;
+    }
 	
 	/*
 	| -------------------------------------------------------------------
@@ -285,6 +304,14 @@ class StreamModel {
 		return $this;
 	}
 	
+	public function whereActiveDate($start, $end)
+	    {
+	        $this->wheres[] = "`{$start}` < NOW()";
+	        $this->wheres[] = "`{$end}` > NOW()";
+        
+	        return $this;
+	    }
+	
 	public function restrict()
 	{
 		$this->restrict_user = true;
@@ -296,15 +323,18 @@ class StreamModel {
 	{
 		if (func_num_args() == 1)
 		{
-			$field = 'id';
 			$values = $field;
+			$field = 'id';
 		}
-		
+
 		$values = implode('|', $values);
-		
-		$this->include = $values;
+
+		// If the values are blank or zero it will not
+		// restrict. Instead, it returns all. So this is
+		// the fix
+		$this->include = ($values != '') ? $values : 'X';
 		$this->include_by = $field;
-		
+
 		return $this;
 	}
 	
@@ -312,8 +342,8 @@ class StreamModel {
 	{
 		if (func_num_args() == 1)
 		{
-			$field = 'id';
-			$values = $field;
+            $values = $field;
+            $field = 'id';
 		}
 		
 		$values = implode('|', $values);
