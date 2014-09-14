@@ -1,7 +1,13 @@
 <?php if (!defined('BASEPATH')) exit('No direct script access allowed');
 
-// v1.0.3
 
+/**
+ * Class Philsquare_stream_model
+ *
+ * @version 1.0.3
+ * @author Philsquare, LLC
+ * @package PyroCMS
+ */
 class Philsquare_stream_model {
 	
 	/**
