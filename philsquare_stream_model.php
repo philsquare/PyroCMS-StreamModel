@@ -4,7 +4,7 @@
 /**
  * Class Philsquare_stream_model
  *
- * @version 1.0.3
+ * @version 1.0.4
  * @author Philsquare, LLC
  * @package PyroCMS
  */
@@ -435,10 +435,16 @@ class Philsquare_stream_model {
 			if(isset($this->$param)) $params[$param] = $this->$param;
 			
 			else $params[$param] = $default;
+
+            // reset
+            $this->$param = $default;
 		}
-		
+
 		// Clear wheres
 		$this->wheres = array();
+
+        // Clear limit
+        $this->limit = null;
 		
 		return $params;
 	}
