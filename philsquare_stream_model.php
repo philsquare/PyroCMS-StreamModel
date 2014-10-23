@@ -4,7 +4,7 @@
 /**
  * Class Philsquare_stream_model
  *
- * @version 1.0.4
+ * @version 1.0.5
  * @author Philsquare, LLC
  * @package PyroCMS
  */
@@ -426,6 +426,9 @@ class Philsquare_stream_model {
 	
 	private function getParams()
 	{
+        $namespace = $this->namespace;
+        $stream = $this->stream;
+
 		$this->where = implode(' AND ', $this->wheres);
 		
 		$entries_params = $this->ci->streams->entries->entries_params;
@@ -445,6 +448,10 @@ class Philsquare_stream_model {
 
         // Clear limit
         $this->limit = null;
+
+        // Reset Namespace and Stream
+        $this->namespace = $namespace;
+        $this->stream = $stream;
 		
 		return $params;
 	}
